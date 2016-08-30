@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import boto3
-import requests
 import sys
 import time
 import subprocess
