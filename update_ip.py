@@ -8,7 +8,7 @@ import argparse
 
 class UpdateIP(object):
 
-    def __init__(self, zone_name, fqdn):
+    def __init__(self, zone_name, fqdn, cmd):
       if zone_name[-1] != '.':
           zone_name = zone_name + '.'
 
@@ -21,12 +21,12 @@ class UpdateIP(object):
 
       print self.route53_client.change_resource_record_sets(
         HostedZoneId=self.zoneId,
-        ChangeBatch=self.getRecordChange(fqdn, self.getPublicIP())
+        ChangeBatch=self.getRecordChange(fqdn, self.getPublicIP(cmd))
      )
 
 
     def getPublicIP(self):
-      return subprocess.check_output(['/bin/bash', '-c', "dig +short myip.opendns.com @resolver1.opendns.com"])
+      return subprocess.check_output(['/bin/bash', '-c', cmd])
 
     def getRecordChange(self, fqdn, ip):
         return {
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Update Public IP to Route53",
         usage='''update_ip.py --zone_name <zone_name> --fqdn <fqdn>''')
-    parser.add_argument('--zone_name', help="Zone Name (i.e. example.com)")
-    parser.add_argument('--fqdn', help="Fully Qualified Domain Name (i.e. home.example.com)")
+    parser.add_argument('--zone_name', '-z', help="Zone Name (i.e. example.com)")
+    parser.add_argument('--fqdn', '-f', help="Fully Qualified Domain Name (i.e. home.example.com)")
+    parser.add_argument('--cmd-to-retrieve-public-ip', '-c', help="Command to retrieve public ip.", default="dig +short myip.opendns.com @resolver1.opendns.com")
     args = parser.parse_args()
     UpdateIP(args.zone_name, args.fqdn)
