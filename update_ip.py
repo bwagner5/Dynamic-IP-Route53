@@ -18,11 +18,21 @@ class UpdateIP(object):
           if zone['Name'] == zone_name:
               self.zoneId = zone['Id']
               break
+      
+    
+      last_ip = self.route53_client.list_resource_record_sets(
+            HostedZoneId=self.zoneId,
+            StartRecordName=fqdn)['ResourceRecordSets'][0]['ResourceRecords'][0]['Value'].strip()
 
-      print self.route53_client.change_resource_record_sets(
-        HostedZoneId=self.zoneId,
-        ChangeBatch=self.getRecordChange(fqdn, self.getPublicIP(cmd))
-     )
+      current_ip = self.getPublicIP(cmd).strip()
+
+
+      if current_ip != last_ip:
+        print "Updating"
+        print self.route53_client.change_resource_record_sets(
+            HostedZoneId=self.zoneId,
+            ChangeBatch=self.getRecordChange(fqdn, current_ip)
+        )
 
 
     def getPublicIP(self, cmd):
