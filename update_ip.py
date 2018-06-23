@@ -25,7 +25,7 @@ class UpdateIP(object):
      )
 
 
-    def getPublicIP(self):
+    def getPublicIP(self, cmd):
       return subprocess.check_output(['/bin/bash', '-c', cmd])
 
     def getRecordChange(self, fqdn, ip):
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     parser.add_argument('--fqdn', '-f', help="Fully Qualified Domain Name (i.e. home.example.com)")
     parser.add_argument('--cmd-to-retrieve-public-ip', '-c', help="Command to retrieve public ip.", default="dig +short myip.opendns.com @resolver1.opendns.com")
     args = parser.parse_args()
-    UpdateIP(args.zone_name, args.fqdn)
+    UpdateIP(args.zone_name, args.fqdn, args.cmd_to_retrieve_public_ip)
