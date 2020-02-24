@@ -1,44 +1,44 @@
 #!/usr/bin/env python
 import boto3
-import sys
 import time
-import subprocess
 import argparse
+import requests
+import socket
 
 
 class UpdateIP(object):
 
-    def __init__(self, zone_name, fqdn, cmd):
+    def __init__(self, zone_name, fqdn):
       if zone_name[-1] != '.':
           zone_name = zone_name + '.'
-
       self.route53_client = boto3.client('route53')
+      self.zone_name = zone_name
+      self.zone_id = None
+      self.fqdn = fqdn
 
+    def is_zone_current(self):
+      return self.get_public_ip() == socket.gethostbyname(self.fqdn).strip()
+
+    def update_ip(self):
+      zone_id = self.get_zone_id()
+      return self.route53_client.change_resource_record_sets(
+        HostedZoneId=zone_id,
+        ChangeBatch=self.get_record_change(self.fqdn, self.get_public_ip())
+      )
+
+    def get_zone_id(self):
+      if self.zone_id is not None:
+        return self.zone_id
       for zone in self.route53_client.list_hosted_zones()['HostedZones']:
-          if zone['Name'] == zone_name:
-              self.zoneId = zone['Id']
+          if zone['Name'] == self.zone_name:
+              self.zone_id = zone['Id']
+              return zone['Id']
               break
-      
-    
-      last_ip = self.route53_client.list_resource_record_sets(
-            HostedZoneId=self.zoneId,
-            StartRecordName=fqdn)['ResourceRecordSets'][0]['ResourceRecords'][0]['Value'].strip()
 
-      current_ip = self.getPublicIP(cmd).strip()
+    def get_public_ip(self):
+      return requests.get(url = "http://checkip.amazonaws.com").text.strip()
 
-
-      if current_ip != last_ip:
-        print "Updating"
-        print self.route53_client.change_resource_record_sets(
-            HostedZoneId=self.zoneId,
-            ChangeBatch=self.getRecordChange(fqdn, current_ip)
-        )
-
-
-    def getPublicIP(self, cmd):
-      return subprocess.check_output(['/bin/bash', '-c', cmd])
-
-    def getRecordChange(self, fqdn, ip):
+    def get_record_change(self, fqdn, ip):
         return {
                 "Comment": "update ip",
                 "Changes": [
@@ -58,15 +58,22 @@ class UpdateIP(object):
                 ]
               }
 
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Update Public IP to Route53",
-        usage='''update_ip.py --zone_name <zone_name> --fqdn <fqdn>''')
+        usage='''update_ip.py --zone_name <zone_name> --fqdn <fqdn> --daemon''')
     parser.add_argument('--zone_name', '-z', help="Zone Name (i.e. example.com)")
     parser.add_argument('--fqdn', '-f', help="Fully Qualified Domain Name (i.e. home.example.com)")
-    parser.add_argument('--cmd-to-retrieve-public-ip', '-c', help="Command to retrieve public ip.", default="dig +short myip.opendns.com @resolver1.opendns.com")
+    parser.add_argument('--daemon', '-d', help="Run as a daemon to periodically update the zone (every 300 secs)", action='store_true')
+    parser.add_argument('--interval', '-i', help="Interval in seconds to update IP if run in daemon mode", default=300)
     args = parser.parse_args()
-    UpdateIP(args.zone_name, args.fqdn, args.cmd_to_retrieve_public_ip)
+    while True:
+      dynamic_dns_updater = UpdateIP(args.zone_name, args.fqdn)
+      if not dynamic_dns_updater.is_zone_current():
+        print(dynamic_dns_updater.update_ip())
+      else:
+        print("Zone is current with IP: " + dynamic_dns_updater.get_public_ip())
+      if args.daemon:
+        time.sleep(args.interval)
+      else:
+        break
