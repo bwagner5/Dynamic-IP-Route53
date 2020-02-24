@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import boto3
 import time
-import argparse
+import configargparse
 import requests
 import socket
 
@@ -59,13 +59,13 @@ class UpdateIP(object):
               }
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
+    parser = configargparse.ArgParser(
         description="Update Public IP to Route53",
         usage='''update_ip.py --zone_name <zone_name> --fqdn <fqdn> --daemon''')
-    parser.add_argument('--zone_name', '-z', help="Zone Name (i.e. example.com)")
-    parser.add_argument('--fqdn', '-f', help="Fully Qualified Domain Name (i.e. home.example.com)")
-    parser.add_argument('--daemon', '-d', help="Run as a daemon to periodically update the zone (every 300 secs)", action='store_true')
-    parser.add_argument('--interval', '-i', help="Interval in seconds to update IP if run in daemon mode", default=300)
+    parser.add('--zone_name', '-z', help="Zone Name (i.e. example.com)", env_var='ZONE_NAME')
+    parser.add('--fqdn', '-f', help="Fully Qualified Domain Name (i.e. home.example.com)", env_var='FQDN')
+    parser.add('--daemon', '-d', help="Run as a daemon to periodically update the zone (every 300 secs)", action='store_true', env_var='DAEMON')
+    parser.add('--interval', '-i', help="Interval in seconds to update IP if run in daemon mode", default=300, type=int, env_var='INTERVAL')
     args = parser.parse_args()
     while True:
       dynamic_dns_updater = UpdateIP(args.zone_name, args.fqdn)
