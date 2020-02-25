@@ -1,0 +1,5 @@
+zoneName: ""
+fqdn: ""
+interval: 300
+dockerImage: brandonwagner/dynamic-ip-route53
+dockerTag: latest

@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamic-ip-route53
+  namespace: default
+  labels:
+    app.kubernetes.io/name: dynamic-ip-route53
+    app.kubernetes.io/instance: dynamic-ip-route53
+    k8s-app: dynamic-ip-route53
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dynamic-ip-route53
+      app.kubernetes.io/instance: dynamic-ip-route53
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dynamic-ip-route53
+        app.kubernetes.io/instance: dynamic-ip-route53
+        k8s-app: dynamic-ip-route53
+    spec:
+      containers:
+        - name: dynamic-ip-route53
+          image: {{ .Values.dockerImage }}:{{ .Values.dockerTag }}
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: DAEMON
+            value: "TRUE"
+          - name: FQDN
+            value: {{ .Values.fqdn }}
+          - name: ZONE_NAME
+            value: {{ .Values.zoneName }}
+          - name: INTERVAL
+            value: {{ .Values.interval | quote }}
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: aws-credentials
+                key: username
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aws-credentials
+                key: password
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            privileged: false

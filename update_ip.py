@@ -67,6 +67,8 @@ if __name__ == '__main__':
     parser.add('--daemon', '-d', help="Run as a daemon to periodically update the zone (every 300 secs)", action='store_true', env_var='DAEMON')
     parser.add('--interval', '-i', help="Interval in seconds to update IP if run in daemon mode", default=300, type=int, env_var='INTERVAL')
     args = parser.parse_args()
+    print(p.format_values())
+    print("Starting Dynamic IP Updates to Route 53")
     while True:
       dynamic_dns_updater = UpdateIP(args.zone_name, args.fqdn)
       if not dynamic_dns_updater.is_zone_current():
