@@ -24,7 +24,7 @@ spec:
       containers:
         - name: dynamic-ip-route53
           image: {{ .Values.dockerImage }}:{{ .Values.dockerTag }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
           - name: DAEMON
             value: "TRUE"
