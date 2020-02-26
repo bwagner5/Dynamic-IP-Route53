@@ -4,5 +4,5 @@ ADD . .
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT ["python", "update_ip.py"]
+ENTRYPOINT ["python", "-u", "update_ip.py"]
 
